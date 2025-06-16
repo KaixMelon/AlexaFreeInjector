@@ -7,7 +7,7 @@ app = Flask(__name__)
 def home():
     return "✅ Alexa Free Bot is Alive."
 
-@app.route('/video1')
+@app.route('/video')
 def send_video():
     try:
         with open("lv_1_1234567.mp4", "rb") as f:
