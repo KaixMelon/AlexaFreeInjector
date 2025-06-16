@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, send_from_directory
 from threading import Thread
 
 app = Flask(__name__)
@@ -9,19 +9,7 @@ def home():
 
 @app.route('/video')
 def send_video():
-    try:
-        with open("lv_1_1234567.mp4", "rb") as f:
-            video_data = f.read()
-        return Response(
-            video_data,
-            mimetype="video/mp4",
-            headers={
-                "Content-Disposition": "inline; filename=lv_1_1234567.mp4",
-                "Content-Length": str(len(video_data))
-            }
-        )
-    except FileNotFoundError:
-        return "Video not found", 404
+    return send_from_directory('.', 'lv_1_1234567.mp4', mimetype='video/mp4')
 
 def keep_alive():
     Thread(target=lambda: app.run(host='0.0.0.0', port=8080)).start()
