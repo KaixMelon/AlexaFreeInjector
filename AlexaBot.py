@@ -22,7 +22,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(tutorial_text, parse_mode='HTML')
 
-    video_url = "https://alexafree.onrender.com/video"
+    video_url = "https://alexafreeinjector.onrender.com/video"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
 
