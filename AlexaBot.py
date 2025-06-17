@@ -14,8 +14,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "This bot allows you to register your device ID to access our services.\n\n"
         "📋 <b>How to Use:</b>\n"
         "• To register your device, send the command:\n"
-        "  <code>/register DEVICE_ID</code>\n"
-        "  <i>Replace DEVICE_ID with your actual device identifier.</i>\n\n"
+        "  <code>/register &lt;DEVICE_ID&gt;</code>\n"
+        "  <i>Replace &lt;DEVICE_ID&gt; with your actual device identifier.</i>\n\n"
         "🔔 <b>Example:</b>\n"
         "<code>/register ABC123XYZ</code>\n\n"
         "Thank you for using our service!\nOwner: @Alexak_Only"
@@ -57,13 +57,15 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Server error. Please try again later.")
 
 
+import asyncio
+
 def main():
     keep_alive()
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("register", register))
-    application.run_polling()
 
+    async def run():
+        application = ApplicationBuilder().token(BOT_TOKEN).build()
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("register", register))
+        await application.run_polling()
 
-if __name__ == '__main__':
-    main()
+    asyncio.run(run())
