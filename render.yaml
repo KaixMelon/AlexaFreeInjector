@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: alexa-free-bot
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python AlexaBot.py"
+    envVars:
+      - key: BOT_TOKEN
+        value: "8025961962:AAElTcbS0p9i4fdHlb9cTkdhXfx2iT0MkJw"
+    autoDeploy: true
