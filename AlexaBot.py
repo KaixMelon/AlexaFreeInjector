@@ -1,8 +1,10 @@
 import os
+import threading
 import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from keep_alive import keep_alive  # Starts Flask server
+from keep_alive import keep_alive
+import asyncio
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
@@ -28,13 +30,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
-        await update.message.reply_text(
-            "❌ Incorrect usage.\nPlease use:\n/register <DEVICE_ID>"
-        )
+        await update.message.reply_text("❌ Incorrect usage.\nPlease use:\n/register <DEVICE_ID>")
         return
 
     device_id = context.args[0]
-
     try:
         response = requests.post(API_URL, data={'device_id': device_id})
         data = response.json()
@@ -48,22 +47,33 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             msg = data.get('message', '❌ Registration failed.')
             if 'ban' in msg.lower():
-                await update.message.reply_text(
-                    "🚫 Your device ID is banned.\nPlease contact @Alexak_Only."
-                )
+                await update.message.reply_text("🚫 Your device ID is banned.\nPlease contact @Alexak_Only.")
             else:
                 await update.message.reply_text(f"❌ {msg}")
     except Exception as e:
         await update.message.reply_text("⚠️ Server error. Please try again later.")
 
 
-def main():
+# ✅ Background thread for keep_alive
+def run_keep_alive():
     keep_alive()
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("register", register))
-    application.run_polling()
+
+# ✅ Bot start without asyncio.run()
+async def start_bot():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("register", register))
+    await app.run_polling()
 
 
 if __name__ == '__main__':
-    main()
+    # Start web server in background
+    threading.Thread(target=run_keep_alive).start()
+
+    # Start the Telegram bot using the running loop
+    try:
+        asyncio.get_event_loop().run_until_complete(start_bot())
+    except RuntimeError:
+        # Fallback in case the loop is already running (Render)
+        loop = asyncio.get_event_loop()
+        loop.create_task(start_bot())
