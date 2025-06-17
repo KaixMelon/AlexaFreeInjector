@@ -1,8 +1,10 @@
 import os
+import threading
+import asyncio
 import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from keep_alive import keep_alive  # Starts Flask server
+from keep_alive import keep_alive  # Flask web server to keep the bot alive
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
@@ -57,10 +59,9 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Server error. Please try again later.")
 
 
-import asyncio
-
 def main():
-    keep_alive()
+    # Start keep_alive Flask server in background thread
+    threading.Thread(target=keep_alive).start()
 
     async def run():
         application = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -69,3 +70,7 @@ def main():
         await application.run_polling()
 
     asyncio.run(run())
+
+
+if __name__ == '__main__':
+    main()
