@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -17,7 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "  <code>/register &lt;DEVICE_ID&gt;</code>\n"
         "  <i>Replace &lt;DEVICE_ID&gt; with your actual device identifier.</i>\n\n"
         "🔔 <b>Example:</b>\n"
-        "<code>/register ABC123XYZ</code>\n\n"
+        "<code>/register 9774d56d682e549c</code>\n\n"
         "Thank you for using our service!\nOwner: @Alexak_Only"
     )
     await update.message.reply_text(tutorial_text, parse_mode='HTML')
@@ -34,6 +35,17 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     device_id = context.args[0]
+
+    # Validate Android ID (must be exactly 16-character hexadecimal)
+    if not re.fullmatch(r'[a-fA-F0-9]{16}', device_id):
+        await update.message.reply_text(
+            "⚠️ The Device ID you provided is not valid.\n\n"
+            "Please ensure your Device ID is exactly 16 characters long and only contains numbers (0–9) and letters (a–f).\n\n"
+            "Example of a valid ID: <code>9774d56d682e549c</code>\n\n"
+            "If you're unsure how to find your device ID, please refer to the video tutorial or contact support.",
+            parse_mode='HTML'
+        )
+        return
 
     try:
         response = requests.post(API_URL, data={'device_id': device_id})
