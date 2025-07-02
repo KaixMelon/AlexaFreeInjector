@@ -78,26 +78,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-        else:
-            msg = data.get('message', '❌ Registration failed.')
-            if 'ban' in msg.lower():
-                await update.message.reply_text(
-                    "🚫 Your device ID is banned.\nPlease contact @Alexak_Only."
-                )
-            else:
-                await update.message.reply_text(f"❌ {msg}")
-    except Exception as e:
-        await update.message.reply_text("⚠️ Server error. Please try again later.")
-
-
-def main():
-    keep_alive()
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("register", register))
-    application.run_polling()
-
-
-if __name__ == '__main__':
-    main()
