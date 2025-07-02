@@ -36,13 +36,12 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     device_id = context.args[0]
 
-    # Validate Android ID (must be exactly 16-character hexadecimal)
-    if not re.fullmatch(r'[a-fA-F0-9]{16}', device_id):
+    # ✅ Allow only alphanumeric (letters and numbers), disallow special characters
+    if not re.fullmatch(r'[a-zA-Z0-9]+', device_id):
         await update.message.reply_text(
-            "⚠️ The Device ID you provided is not valid.\n\n"
-            "Please ensure your Device ID is exactly 16 characters long and only contains numbers (0–9) and letters (a–f).\n\n"
-            "Example of a valid ID: <code>9774d56d682e549c</code>\n\n"
-            "If you're unsure how to find your device ID, please refer to the video tutorial or contact support.",
+            "⚠️ Invalid Device ID.\n\n"
+            "Only letters and numbers are allowed.\n"
+            "Do not use symbols like @, #, %, -, +, etc.",
             parse_mode='HTML'
         )
         return
@@ -57,6 +56,29 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if expiry:
                 msg += f"\n🗓️ Expiry: {expiry}"
             await update.message.reply_text(f"✅ {msg}")
+        else:
+            msg = data.get('message', '❌ Registration failed.')
+            if 'ban' in msg.lower():
+                await update.message.reply_text(
+                    "🚫 Your device ID is banned.\nPlease contact @Alexak_Only."
+                )
+            else:
+                await update.message.reply_text(f"❌ {msg}")
+    except Exception as e:
+        await update.message.reply_text("⚠️ Server error. Please try again later.")
+
+
+def main():
+    keep_alive()
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("register", register))
+    application.run_polling()
+
+
+if __name__ == '__main__':
+    main()
+
         else:
             msg = data.get('message', '❌ Registration failed.')
             if 'ban' in msg.lower():
