@@ -82,15 +82,27 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    verify = requests.get(check_url)
 
-    try:
-        response = requests.get(check_url)
-        if response.status_code == 200:
-            await update.message.reply_text("✅ Your device is now verified and active!")
-        else:
-            await update.message.reply_text("⏳ Not verified yet. Make sure you completed the ShrinkMe step.")
-    except:
-        await update.message.reply_text("⚠️ Error checking verification.")
+    if verify.status_code == 200:
+        # 🔁 Now re-check the API to get expiry
+        try:
+            response = requests.post(API_URL, data={'device_id': device_id})
+            data = response.json()
+
+            if data.get('status') == 'success':
+                msg = data['message']
+                expiry = data.get('expiry_datetime')
+                if expiry:
+                    msg += f"\n🗓️ Expiry: {expiry}"
+                await update.message.reply_text(f"✅ {msg}")
+            else:
+                await update.message.reply_text("✅ Verified, but could not fetch expiry info.")
+        except:
+            await update.message.reply_text("✅ Verified, but error fetching expiry.")
+    else:
+        await update.message.reply_text("⏳ Not verified yet. Make sure you completed the ShrinkMe step.")
+
 
 
 # 🔁 Main bot setup
