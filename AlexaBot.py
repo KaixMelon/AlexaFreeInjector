@@ -17,8 +17,10 @@ SHRINKME_API_KEY = '4dcbed541365382d5a5d325da402fb1cc9a7e651'
 
 # 📦 Generates a short link for the verify.php using ShrinkMe.io API
 def get_shrinkme_link(device_id):
-    target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}"
-    api_url = f"https://shrinkme.io/api?api={SHRINKME_API_KEY}&url={target_url}"
+    api_key = '4dcbed541365382d5a5d325da402fb1cc9a7e651'
+    secret_key = 'AL3X4@2025'  # MUST match PHP file
+    target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&key={secret_key}"
+    api_url = f"https://shrinkme.io/api?api={api_key}&url={target_url}"
 
     try:
         response = requests.get(api_url)
