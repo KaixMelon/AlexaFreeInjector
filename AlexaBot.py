@@ -3,7 +3,6 @@ import re
 import requests
 import urllib.parse
 import hashlib
-import urllib.parse
 import asyncio
 from telegram.ext import JobQueue
 from telegram import Update
@@ -33,10 +32,7 @@ def get_shrinkme_link(device_id):
         return real_url
 
 
-# ✅ Auto poll function (runs in background)
-import asyncio
-
-# ✅ Auto poll function (runs in background)
+# ✅ Background polling to check verification
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
@@ -45,21 +41,19 @@ async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     try:
         response = requests.get(url)
         if response.status_code == 200:
-            # Optional: Call API to get expiry
-            api_url = 'https://kaicodm.store/Free/api_register.php'
-            result = requests.post(api_url, data={'device_id': device_id}).json()
+            result = requests.post(API_URL, data={'device_id': device_id}).json()
             msg = result.get("message", "✅ Device verified.")
             expiry = result.get("expiry_datetime")
             if expiry:
                 msg += f"\n🗓️ Expiry: {expiry}"
 
             await context.bot.send_message(chat_id=chat_id, text=msg)
-            context.job.schedule_removal()  # Stop polling once verified
+            context.job.schedule_removal()  # Stop polling
     except:
         pass
 
 
-
+# ✅ /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tutorial_text = (
         "👋 <b>Welcome to the Device Registration Bot!</b>\n\n"
@@ -78,6 +72,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
 
+# ✅ /register command
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
         await update.message.reply_text("❌ Usage: /register <DEVICE_ID>")
@@ -97,7 +92,11 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⏳ After completing the steps, I'll auto-confirm your device."
     )
 
-    # ✅ Start background polling every 10s
+    # 🎥 Send tutorial video
+    video_url = "https://alexafreeinjector.onrender.com/video"
+    await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
+
+    # ✅ Start polling every 1 second
     context.job_queue.run_repeating(
         poll_verification,
         interval=1,
@@ -107,6 +106,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+# ✅ /token command
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
     device_id = context.user_data.get('device_id')
     if not device_id:
@@ -135,6 +135,7 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⏳ Not verified yet. Complete the ShrinkMe link first.")
 
 
+# ✅ Main bot launcher
 def main():
     keep_alive()
     application = ApplicationBuilder().token(BOT_TOKEN).build()
