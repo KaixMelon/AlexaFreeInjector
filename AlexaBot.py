@@ -68,7 +68,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(tutorial_text, parse_mode='HTML')
 
-    video_url = "https://alexafreeinjector.onrender.com/video"
+    video_url = "https://alexafreeinjector.onrender.com/video2025"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
 
@@ -93,7 +93,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     # 🎥 Send tutorial video
-    video_url = "https://alexafreeinjector.onrender.com/video"
+    video_url = "https://alexafreeinjector.onrender.com/video2025"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
     # ✅ Start polling every 1 second
