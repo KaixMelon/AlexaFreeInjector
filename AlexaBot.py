@@ -2,6 +2,8 @@ import os
 import re
 import requests
 import urllib.parse
+import hashlib
+import urllib.parse
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive  # Optional Flask server
@@ -12,9 +14,12 @@ API_URL = 'https://kaicodm.store/Free/api_register.php'
 
 def get_shrinkme_link(device_id):
     api_key = '4dcbed541365382d5a5d325da402fb1cc9a7e651'
-    secret_key = 'AL3X4@2025'
-    real_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&key={secret_key}"
-    encoded_url = urllib.parse.quote(real_url, safe='')  # Encode full URL for safety
+    secret = 'ALEXA_SECRET2025'  # keep this private and same in PHP
+    raw = f"{device_id}{secret}"
+    signature = hashlib.sha256(raw.encode()).hexdigest()
+
+    real_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}"
+    encoded_url = urllib.parse.quote(real_url, safe='')
     api_url = f"https://shrinkme.io/api?api={api_key}&url={encoded_url}"
 
     try:
@@ -22,7 +27,7 @@ def get_shrinkme_link(device_id):
         data = response.json()
         return data.get("shortenedUrl", real_url)
     except Exception as e:
-        print("ShrinkMe Error:", e)
+        print("ShrinkMe error:", e)
         return real_url
 
 
