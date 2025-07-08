@@ -38,22 +38,29 @@ async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
 
-    url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
     try:
-        response = requests.get(url)
+        response = requests.get(check_url)
         if response.status_code == 200:
-            # Optional: Call API to get expiry
+            # ✅ Device verified, now register via API
             api_url = 'https://kaicodm.store/Free/api_register.php'
-            result = requests.post(api_url, data={'device_id': device_id}).json()
-            msg = result.get("message", "✅ Device verified.")
-            expiry = result.get("expiry_datetime")
-            if expiry:
-                msg += f"\n🗓️ Expiry: {expiry}"
+            api_response = requests.post(api_url, data={'device_id': device_id})
+            result = api_response.json()
 
-            await context.bot.send_message(chat_id=chat_id, text=msg)
-            context.job.schedule_removal()  # Stop polling once verified
-    except:
-        pass
+            if result.get('status') == 'success':
+                expiry = result.get('expiry_datetime', 'N/A')
+                message = (
+                    f"✅ Verified and Registered!\n\n"
+                    f"📱 Device ID: <code>{device_id}</code>\n"
+                    f"🗓️ Expiry: {expiry}"
+                )
+            else:
+                message = f"⚠️ Verified, but registration failed.\n{result.get('message')}"
+
+            await context.bot.send_message(chat_id=chat_id, text=message, parse_mode='HTML')
+            context.job.schedule_removal()  # ✅ Stop polling after success
+    except Exception as e:
+        print(f"[poll_verification] Error: {e}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -95,12 +102,13 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # ✅ Start background polling every 10s
     context.job_queue.run_repeating(
-        poll_verification,
-        interval=10,
-        first=10,
-        data=device_id,
-        chat_id=update.effective_chat.id
-    )
+    poll_verification,
+    interval=1,     # ✅ Check every 1 second
+    first=1,
+    data=device_id,
+    chat_id=update.effective_chat.id
+)
+
 
 
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
