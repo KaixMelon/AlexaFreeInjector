@@ -4,6 +4,8 @@ import requests
 import urllib.parse
 import hashlib
 import urllib.parse
+import asyncio
+from telegram.ext import JobQueue
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive  # Optional Flask server
@@ -31,6 +33,29 @@ def get_shrinkme_link(device_id):
         return real_url
 
 
+# ✅ Auto poll function (runs in background)
+async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = context.job.chat_id
+    device_id = context.job.data
+
+    url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            # Optional: Call API to get expiry
+            api_url = 'https://kaicodm.store/Free/api_register.php'
+            result = requests.post(api_url, data={'device_id': device_id}).json()
+            msg = result.get("message", "✅ Device verified.")
+            expiry = result.get("expiry_datetime")
+            if expiry:
+                msg += f"\n🗓️ Expiry: {expiry}"
+
+            await context.bot.send_message(chat_id=chat_id, text=msg)
+            context.job.schedule_removal()  # Stop polling once verified
+    except:
+        pass
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tutorial_text = (
         "👋 <b>Welcome to the Device Registration Bot!</b>\n\n"
@@ -51,28 +76,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
-        await update.message.reply_text("❌ Incorrect usage.\nPlease use:\n/register <DEVICE_ID>")
+        await update.message.reply_text("❌ Usage: /register <DEVICE_ID>")
         return
 
     device_id = context.args[0]
 
     if not re.fullmatch(r'[a-zA-Z0-9]+', device_id):
-        await update.message.reply_text(
-            "⚠️ Invalid Device ID.\n\nOnly letters and numbers are allowed.",
-            parse_mode='HTML'
-        )
+        await update.message.reply_text("⚠️ Invalid Device ID. Only letters and numbers allowed.")
         return
 
-    # Save device ID in user_data for later use in /token
     context.user_data['device_id'] = device_id
-
-    short_link = get_shrinkme_link(device_id)
+    link = get_shrinkme_link(device_id)
 
     await update.message.reply_text(
-        f"🔗 To verify your device, click the link below and complete the short ad:\n\n"
-        f"{short_link}\n\n"
-        f"⏳ After verifying, return here and type:\n<code>/token</code>",
-        parse_mode='HTML'
+        f"🔗 Click this link to verify:\n{link}\n\n"
+        f"⏳ After completing the steps, I'll auto-confirm your device."
+    )
+
+    # ✅ Start background polling every 10s
+    context.job_queue.run_repeating(
+        poll_verification,
+        interval=10,
+        first=10,
+        data=device_id,
+        chat_id=update.effective_chat.id
     )
 
 
