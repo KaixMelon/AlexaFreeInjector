@@ -103,8 +103,8 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ✅ Start background polling every 10s
     context.job_queue.run_repeating(
     poll_verification,
-    interval=1,     # ✅ Check every 1 second
-    first=1,
+    interval=5,     # ✅ Check every 1 second
+    first=5,
     data=device_id,
     chat_id=update.effective_chat.id
 )
