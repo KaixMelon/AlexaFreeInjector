@@ -126,7 +126,7 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await update.message.reply_text("✅ Verified, Your Device Id Is Successfully Registered.")
         except:
-            await update.message.reply_text(""✅ Verified, Your Device Id Is Successfully Registered.")
+            await update.message.reply_text("✅ Verified, Your Device Id Is Successfully Registered.")
     else:
         await update.message.reply_text("⏳ Not verified yet. Complete the ShrinkMe link first.")
 
