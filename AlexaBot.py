@@ -124,9 +124,9 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     msg += f"\n🗓️ Expiry: {expiry}"
                 await update.message.reply_text(f"✅ {msg}")
             else:
-                await update.message.reply_text("✅ Verified, but no expiry info.")
+                await update.message.reply_text("✅ Verified, Your Device Id Is Successfully Registered.")
         except:
-            await update.message.reply_text("✅ Verified, but error fetching expiry.")
+            await update.message.reply_text(""✅ Verified, Your Device Id Is Successfully Registered.")
     else:
         await update.message.reply_text("⏳ Not verified yet. Complete the ShrinkMe link first.")
 
