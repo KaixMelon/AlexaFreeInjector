@@ -34,33 +34,30 @@ def get_shrinkme_link(device_id):
 
 
 # ✅ Auto poll function (runs in background)
+import asyncio
+
+# ✅ Auto poll function (runs in background)
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
 
-    check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
     try:
-        response = requests.get(check_url)
+        response = requests.get(url)
         if response.status_code == 200:
-            # ✅ Device verified, now register via API
+            # Optional: Call API to get expiry
             api_url = 'https://kaicodm.store/Free/api_register.php'
-            api_response = requests.post(api_url, data={'device_id': device_id})
-            result = api_response.json()
+            result = requests.post(api_url, data={'device_id': device_id}).json()
+            msg = result.get("message", "✅ Device verified.")
+            expiry = result.get("expiry_datetime")
+            if expiry:
+                msg += f"\n🗓️ Expiry: {expiry}"
 
-            if result.get('status') == 'success':
-                expiry = result.get('expiry_datetime', 'N/A')
-                message = (
-                    f"✅ Verified and Registered!\n\n"
-                    f"📱 Device ID: <code>{device_id}</code>\n"
-                    f"🗓️ Expiry: {expiry}"
-                )
-            else:
-                message = f"⚠️ Verified, but registration failed.\n{result.get('message')}"
+            await context.bot.send_message(chat_id=chat_id, text=msg)
+            context.job.schedule_removal()  # Stop polling once verified
+    except:
+        pass
 
-            await context.bot.send_message(chat_id=chat_id, text=message, parse_mode='HTML')
-            context.job.schedule_removal()  # ✅ Stop polling after success
-    except Exception as e:
-        print(f"[poll_verification] Error: {e}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -102,13 +99,12 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # ✅ Start background polling every 10s
     context.job_queue.run_repeating(
-    poll_verification,
-    interval=5,     # ✅ Check every 1 second
-    first=5,
-    data=device_id,
-    chat_id=update.effective_chat.id
-)
-
+        poll_verification,
+        interval=1,
+        first=1,
+        data=device_id,
+        chat_id=update.effective_chat.id
+    )
 
 
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
