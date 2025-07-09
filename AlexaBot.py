@@ -19,16 +19,29 @@ def get_lootlabs_link(device_id):
     sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
     target = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}&t=loot"
 
+  def get_lootlabs_link(device_id):
+    api_token = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
+    sig = hashlib.sha256(f"{device_id}ALEXA_SECRET2025".encode()).hexdigest()
+    target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}"
+
     params = {
-        "api_token": api_key,
+        "api_token": api_token,
         "title": "Alexa Injector",
-        "url": target,
-        "number_of_tasks": "3",
+        "url": target_url,
         "tier_id": "1",
-        "theme": "5",            # 'space' is theme 5
-        "folder": "Alexa Injector",  # Folder name same as title
-        # Optionally: "thumbnail": "https://example.com/thumb.jpg"
+        "number_of_tasks": "3",
+        "theme": "5",                # 5 = Space
+        "thumbnail": "",            # optional, keep blank
+        "folder": "Alexa Injector"  # helps avoid missing parameter issues
     }
+
+    resp = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
+    data = resp.json()
+    if data.get("type") in ("created", "fetch") and "loot_url" in data.get("message", {}):
+        return data["message"]["loot_url"]
+    else:
+        print("❌ LootLabs API error:", data)
+        return target_url
 
     resp = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
     data = resp.json()
