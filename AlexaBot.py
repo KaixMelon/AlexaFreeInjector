@@ -14,17 +14,19 @@ LOOTLABS_TOKEN = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c
 
 
 def get_lootlabs_link(device_id):
+    api_key = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
     secret = 'ALEXA_SECRET2025'
     signature = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
     target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}&t=loot"
 
+    # Proper API parameters
     params = {
-        "api_token": LOOTLABS_TOKEN,
+        "api_token": api_key,
         "title": "Alexa Injector",
         "url": target_url,
-        "number_of_tasks": 3,
-        "theme": "space",
-        "tier_id": 1
+        "number_of_tasks": "3",   # Make sure it's a string
+        "tier_id": "1",
+        "theme": "space"
     }
 
     try:
@@ -39,6 +41,7 @@ def get_lootlabs_link(device_id):
     except Exception as e:
         print("❌ LootLabs Exception:", e)
         return target_url
+
 
 
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
