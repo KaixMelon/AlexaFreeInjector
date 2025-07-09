@@ -18,7 +18,7 @@ def get_shrinkme_link(device_id):
     raw = f"{device_id}{secret}"
     signature = hashlib.sha256(raw.encode()).hexdigest()
 
-    real_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}"
+    real_url = f"https://kaicodm.store/Free/redirect.php?device_id={device_id}&sig={signature}"
     api_url = f"https://lootlabs.io/api?api={api_key}&url={real_url}"
 
     try:
