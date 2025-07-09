@@ -13,7 +13,6 @@ SHRINKEARN_API_KEY = '2f865cf0ed73598943d81ab3d4174a6558fc9d37'
 
 
 def get_shrinkearn_link(device_id):
-
     secret = 'ALEXA_SECRET2025'
     sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
     long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}&t=shrink"
