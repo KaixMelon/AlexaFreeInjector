@@ -2,15 +2,18 @@ import os
 import re
 import requests
 import hashlib
+import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive  # Optional Flask server
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
-
-# Official LootLabs API token
 LOOTLABS_TOKEN = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
+
+# Rotate theme and tier to avoid blank screens
+theme_options = ["1", "2", "5"]  # Trending, Gaming, Space
+tier_options = ["2", "3"]
 
 
 def get_lootlabs_link(device_id):
@@ -18,13 +21,16 @@ def get_lootlabs_link(device_id):
     signature = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
     target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}&t=loot"
 
+    theme = random.choice(theme_options)
+    tier = random.choice(tier_options)
+
     params = {
         "api_token": LOOTLABS_TOKEN,
         "title": "Alexa Injector",
         "url": target_url,
         "number_of_tasks": "3",
-        "tier_id": "2",
-        "theme": "1",  # Space
+        "tier_id": tier,
+        "theme": theme,
         "thumbnail": "",
         "folder": "Alexa Injector"
     }
@@ -33,24 +39,21 @@ def get_lootlabs_link(device_id):
         response = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
         data = response.json()
 
-        # ✅ Fix: handle both types of 'message' response
         if isinstance(data.get("message"), dict) and "loot_url" in data["message"]:
             return data["message"]["loot_url"]
         elif isinstance(data.get("message"), list) and len(data["message"]) > 0:
             return data["message"][0].get("loot_url", target_url)
         else:
             print("❌ LootLabs API Error:", data)
-            return f"ERROR: {data}"
+            return target_url
     except Exception as e:
         print("❌ LootLabs Exception:", e)
-        return f"EXCEPTION: {e}"
-
+        return target_url
 
 
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
-
     url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
     try:
         response = requests.get(url)
@@ -77,7 +80,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Owner: @Alexak_Only"
     )
     await update.message.reply_text(text, parse_mode='HTML')
-
     video_url = "https://alexafreeinjector.onrender.com/video2025"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
@@ -93,14 +95,11 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     context.user_data['device_id'] = device_id
-
-    # Call LootLabs API and show debug link
     link = get_lootlabs_link(device_id)
-
-    await update.message.reply_text(f"📡 LootLabs debug link: {link}")
 
     await update.message.reply_text(
         f"🔗 Click the link below and complete 3 steps:\n{link}\n\n"
+        f"⚠️ If the page is blank, try mobile data or a different browser (no VPN or ad blocker).\n"
         f"⏳ After completing all tasks, type /token"
     )
 
@@ -124,7 +123,6 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
     verify = requests.get(check_url)
-
     if verify.status_code == 200:
         try:
             response = requests.post(API_URL, data={'device_id': device_id})
