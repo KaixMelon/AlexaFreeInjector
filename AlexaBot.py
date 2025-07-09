@@ -1,7 +1,6 @@
 import os
 import re
 import requests
-import urllib.parse
 import hashlib
 import asyncio
 from telegram.ext import JobQueue
@@ -20,19 +19,19 @@ def get_shrinkme_link(device_id):
     signature = hashlib.sha256(raw.encode()).hexdigest()
 
     real_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}"
-    encoded_url = urllib.parse.quote(real_url, safe='')
-    api_url = f"https://shrinkme.io/api?api={api_key}&url={encoded_url}"
+    api_url = f"https://shrinkme.io/api?api={api_key}&url={real_url}"
 
     try:
         response = requests.get(api_url)
         data = response.json()
+        print("ShrinkMe API response:", data)  # Debug log
         return data.get("shortenedUrl", real_url)
     except Exception as e:
         print("ShrinkMe error:", e)
         return real_url
 
 
-# ✅ Background polling to check verification
+# Background polling to check verification
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
@@ -53,7 +52,7 @@ async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
         pass
 
 
-# ✅ /start command
+# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tutorial_text = (
         "👋 <b>Welcome to the Device Registration Bot!</b>\n\n"
@@ -72,7 +71,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
 
-# ✅ /register command
+# /register command
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
         await update.message.reply_text("❌ Usage: /register <DEVICE_ID>")
@@ -93,11 +92,11 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🗒️ Copy the link and paste it to Chrome."
     )
 
-    # 🎥 Send tutorial video
+    # Send tutorial video
     video_url = "https://alexafreeinjector.onrender.com/video2025"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
-    # ✅ Start polling every 1 second
+    # Start polling every 1 second
     context.job_queue.run_repeating(
         poll_verification,
         interval=1,
@@ -107,7 +106,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# ✅ /token command
+# /token command
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
     device_id = context.user_data.get('device_id')
     if not device_id:
@@ -136,7 +135,7 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⏳ Not verified yet. Complete the ShrinkMe link first.")
 
 
-# ✅ Main bot launcher
+# Main bot launcher
 def main():
     keep_alive()
     application = ApplicationBuilder().token(BOT_TOKEN).build()
