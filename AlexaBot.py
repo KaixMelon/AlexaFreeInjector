@@ -23,7 +23,7 @@ def get_lootlabs_link(device_id):
         "title": "Alexa Injector",
         "url": target_url,
         "number_of_tasks": "3",
-        "tier_id": "1",
+        "tier_id": "3",
         "theme": "5",  # Space
         "thumbnail": "",
         "folder": "Alexa Injector"
