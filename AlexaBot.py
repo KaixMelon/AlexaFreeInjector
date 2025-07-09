@@ -17,38 +17,33 @@ tier_options = ["2", "3"]
 
 
 def get_lootlabs_link(device_id):
+    import hashlib
     secret = 'ALEXA_SECRET2025'
     signature = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
     target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}&t=loot"
-
-    theme = random.choice(theme_options)
-    tier = random.choice(tier_options)
 
     params = {
         "api_token": LOOTLABS_TOKEN,
         "title": "Alexa Injector",
         "url": target_url,
         "number_of_tasks": "3",
-        "tier_id": tier,
-        "theme": theme,
-        "thumbnail": "",
-        "folder": "Alexa Injector"
+        "tier_id": "2",  # safest
+        "theme": "1",    # trending = best
     }
 
     try:
         response = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
         data = response.json()
+        print("🧪 LootLabs response:", data)
 
-        if isinstance(data.get("message"), dict) and "loot_url" in data["message"]:
-            return data["message"]["loot_url"]
-        elif isinstance(data.get("message"), list) and len(data["message"]) > 0:
+        if isinstance(data.get("message"), list) and len(data["message"]) > 0:
             return data["message"][0].get("loot_url", target_url)
         else:
-            print("❌ LootLabs API Error:", data)
             return target_url
     except Exception as e:
-        print("❌ LootLabs Exception:", e)
+        print("❌ Exception:", e)
         return target_url
+
 
 
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
