@@ -3,6 +3,7 @@ import re
 import requests
 import hashlib
 import asyncio
+from urllib.parse import quote_plus
 from telegram.ext import JobQueue
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -12,24 +13,26 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
 
 
-# 🔗 Generate LootLabs shortened link
+# 🔗 LootLabs link generator with debug + URL encoding
 def get_lootlabs_link(device_id):
     api_key = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
     secret = 'ALEXA_SECRET2025'
     raw = f"{device_id}{secret}"
     signature = hashlib.sha256(raw.encode()).hexdigest()
 
-    real_url = f"https://kaicodm.store/Free/redirect.php?device_id={device_id}&sig={signature}"
-    api_url = f"https://lootlabs.io/api?api={api_key}&url={real_url}"
+    real_url_raw = f"https://kaicodm.store/Free/redirect.php?device_id={device_id}&sig={signature}"
+    encoded_url = quote_plus(real_url_raw)
+    api_url = f"https://lootlabs.io/api?api={api_key}&url={encoded_url}"
 
     try:
+        print("Requesting:", api_url)
         response = requests.get(api_url)
-        print("LootLabs API response:", response.text)  # Debug log
+        print("LootLabs API response:", response.text)
         data = response.json()
-        return data.get("shortenedUrl") or real_url
+        return data.get("shortenedUrl") or real_url_raw
     except Exception as e:
         print("LootLabs error:", e)
-        return real_url
+        return real_url_raw
 
 
 # 🔁 Poll server to check for verification
@@ -134,7 +137,7 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⏳ Not verified yet. Complete the LootLabs link first.")
 
 
-# 🟢 Start the bot
+# 🔃 Main launcher
 def main():
     keep_alive()
     application = ApplicationBuilder().token(BOT_TOKEN).build()
