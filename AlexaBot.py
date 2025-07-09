@@ -13,23 +13,28 @@ SHRINKEARN_API_KEY = '2f865cf0ed73598943d81ab3d4174a6558fc9d37'
 
 
 def get_shrinkearn_link(device_id):
+
     secret = 'ALEXA_SECRET2025'
-    signature = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
-    long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}&t=shrink"
+    sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
+    long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}&t=shrink"
 
     params = {
-        "api": SHRINKEARN_API_KEY,
+        "api": "2f865cf0ed73598943d81ab3d4174a6558fc9d37",
         "url": long_url,
-        "alias": f"alexa{random.randint(1000,9999)}"
+        "alias": f"alx{random.randint(1000,9999)}"
     }
 
     try:
-        response = requests.get("https://api.shrinkearn.com/api", params=params)
+        response = requests.get("https://shrinkearn.com/api", params=params)
+        print("📦 ShrinkEarn API raw response:", response.text)
         data = response.json()
-        print("🔗 ShrinkEarn response:", data)
-        return data.get("shortenedUrl", long_url)
+        if data.get("status") == "success":
+            return data.get("shortenedUrl", long_url)
+        else:
+            print("❌ ShrinkEarn returned error:", data)
+            return long_url
     except Exception as e:
-        print("❌ ShrinkEarn Error:", e)
+        print("❌ ShrinkEarn Exception:", e)
         return long_url
 
 
