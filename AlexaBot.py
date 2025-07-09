@@ -9,41 +9,28 @@ from keep_alive import keep_alive  # Optional Flask server
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
-LOOTLABS_TOKEN = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
-
-# Rotate theme and tier to avoid blank screens
-theme_options = ["1", "2", "5"]  # Trending, Gaming, Space
-tier_options = ["2", "3"]
+SHRINKEARN_API_KEY = '2f865cf0ed73598943d81ab3d4174a6558fc9d37'
 
 
-def get_lootlabs_link(device_id):
-    import hashlib
+def get_shrinkearn_link(device_id):
     secret = 'ALEXA_SECRET2025'
     signature = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
-    target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}&t=loot"
+    long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}&t=shrink"
 
     params = {
-        "api_token": LOOTLABS_TOKEN,
-        "title": "Alexa Injector",
-        "url": target_url,
-        "number_of_tasks": "3",
-        "tier_id": "2",  # safest
-        "theme": "1",    # trending = best
+        "api": SHRINKEARN_API_KEY,
+        "url": long_url,
+        "alias": f"alexa{random.randint(1000,9999)}"
     }
 
     try:
-        response = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
+        response = requests.get("https://api.shrinkearn.com/api", params=params)
         data = response.json()
-        print("🧪 LootLabs response:", data)
-
-        if isinstance(data.get("message"), list) and len(data["message"]) > 0:
-            return data["message"][0].get("loot_url", target_url)
-        else:
-            return target_url
+        print("🔗 ShrinkEarn response:", data)
+        return data.get("shortenedUrl", long_url)
     except Exception as e:
-        print("❌ Exception:", e)
-        return target_url
-
+        print("❌ ShrinkEarn Error:", e)
+        return long_url
 
 
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
@@ -90,11 +77,11 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     context.user_data['device_id'] = device_id
-    link = get_lootlabs_link(device_id)
+    link = get_shrinkearn_link(device_id)
 
     await update.message.reply_text(
-        f"🔗 Click the link below and complete 3 steps:\n{link}\n\n"
-        f"⚠️ If the page is blank, try mobile data or a different browser (no VPN or ad blocker).\n"
+        f"🔗 Click the link below and complete the steps:\n{link}\n\n"
+        f"⚠️ If the page is blank or ad-heavy, wait for the countdown then tap 'Continue'.\n"
         f"⏳ After completing all tasks, type /token"
     )
 
