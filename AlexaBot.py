@@ -14,12 +14,6 @@ LOOTLABS_TOKEN = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c
 
 
 def get_lootlabs_link(device_id):
-    api_key = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
-    secret = 'ALEXA_SECRET2025'
-    sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
-    target = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}&t=loot"
-
-  def get_lootlabs_link(device_id):
     api_token = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
     sig = hashlib.sha256(f"{device_id}ALEXA_SECRET2025".encode()).hexdigest()
     target_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}"
@@ -42,15 +36,6 @@ def get_lootlabs_link(device_id):
     else:
         print("❌ LootLabs API error:", data)
         return target_url
-
-    resp = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
-    data = resp.json()
-    if data.get("type") in ("created","fetch") and "loot_url" in data.get("message",{}):
-        return data["message"]["loot_url"]
-    else:
-        print("❌ LootLabs API error:", data)
-        return target
-
 
 
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
