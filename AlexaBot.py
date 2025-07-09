@@ -11,23 +11,23 @@ from keep_alive import keep_alive  # Optional Flask server
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
 
-
-def get_shrinkme_link(device_id):
+# ✅ Replace ShrinkMe with LootLabs
+def get_lootlabs_link(device_id):
     api_key = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
     secret = 'ALEXA_SECRET2025'  # keep this private and same in PHP
     raw = f"{device_id}{secret}"
     signature = hashlib.sha256(raw.encode()).hexdigest()
 
-    real_url = f"https://kaicodm.store/Free/redirect.php?device_id={device_id}&sig={signature}"
+    real_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}"
     api_url = f"https://lootlabs.io/api?api={api_key}&url={real_url}"
 
     try:
         response = requests.get(api_url)
         data = response.json()
-        print("ShrinkMe API response:", data)  # Debug log
+        print("LootLabs API response:", data)  # Debug log
         return data.get("shortenedUrl", real_url)
     except Exception as e:
-        print("ShrinkMe error:", e)
+        print("LootLabs error:", e)
         return real_url
 
 
@@ -84,7 +84,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     context.user_data['device_id'] = device_id
-    link = get_shrinkme_link(device_id)
+    link = get_lootlabs_link(device_id)  # ✅ Now using LootLabs
 
     await update.message.reply_text(
         f"🔗 Copy this link and paste it to Chrome. After Completing the step, comeback here and type /token:\n{link}\n\n"
@@ -132,7 +132,7 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             await update.message.reply_text("✅ Verified, Your Device Id Is Successfully Registered.")
     else:
-        await update.message.reply_text("⏳ Not verified yet. Complete the ShrinkMe link first.")
+        await update.message.reply_text("⏳ Not verified yet. Complete the LootLabs link first.")
 
 
 # Main bot launcher
