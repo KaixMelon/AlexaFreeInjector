@@ -88,8 +88,9 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = get_shrinkme_link(device_id)
 
     await update.message.reply_text(
-        f"🔗 Click this link to verify:\n{link}\n\n"
-        f"⏳ After completing the steps, I'll auto-confirm your device."
+        f"🔗 Copy this link and paste it to Chrome. After Completing the step, comeback here and type /token:\n{link}\n\n"
+        f"⏳ After completing the steps, I'll auto-confirm your device.\n\n"
+        f"🗒️ Copy the link and paste it to Chrome."
     )
 
     # 🎥 Send tutorial video
