@@ -33,14 +33,18 @@ def get_lootlabs_link(device_id):
         response = requests.get("https://creators.lootlabs.gg/api/public/content_locker", params=params)
         data = response.json()
 
-        if "message" in data and "loot_url" in data["message"]:
+        # ✅ Fix: handle both types of 'message' response
+        if isinstance(data.get("message"), dict) and "loot_url" in data["message"]:
             return data["message"]["loot_url"]
+        elif isinstance(data.get("message"), list) and len(data["message"]) > 0:
+            return data["message"][0].get("loot_url", target_url)
         else:
             print("❌ LootLabs API Error:", data)
             return f"ERROR: {data}"
     except Exception as e:
         print("❌ LootLabs Exception:", e)
         return f"EXCEPTION: {e}"
+
 
 
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
