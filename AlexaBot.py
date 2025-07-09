@@ -11,7 +11,8 @@ from keep_alive import keep_alive  # Optional Flask server
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
 
-# ✅ Replace ShrinkMe with LootLabs
+
+# ✅ LootLabs Short Link Generator
 def get_lootlabs_link(device_id):
     api_key = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
     secret = 'ALEXA_SECRET2025'  # keep this private and same in PHP
@@ -24,14 +25,17 @@ def get_lootlabs_link(device_id):
     try:
         response = requests.get(api_url)
         data = response.json()
-        print("LootLabs API response:", data)  # Debug log
-        return data.get("shortenedUrl", real_url)
+        if data.get("status") == "success":
+            return data.get("shortenedUrl")
+        else:
+            print("❌ LootLabs API error:", data)
+            return real_url
     except Exception as e:
-        print("LootLabs error:", e)
+        print("❌ Exception in LootLabs:", e)
         return real_url
 
 
-# Background polling to check verification
+# 🔄 Polling for verification
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
@@ -52,7 +56,7 @@ async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
         pass
 
 
-# /start command
+# 🟢 /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tutorial_text = (
         "👋 <b>Welcome to the Device Registration Bot!</b>\n\n"
@@ -71,7 +75,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
 
-# /register command
+# 📝 /register command
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
         await update.message.reply_text("❌ Usage: /register <DEVICE_ID>")
@@ -86,17 +90,31 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['device_id'] = device_id
     link = get_lootlabs_link(device_id)  # ✅ Now using LootLabs
 
+    # 🐞 DEBUG INFO
+    if "lootlabs.io" not in link:
+        await update.message.reply_text(
+            f"🐞 Debug: API did not return a LootLabs short link.\n"
+            f"⚠️ Falling back to real URL.\n"
+            f"🔗 Final link: {link}"
+        )
+    else:
+        await update.message.reply_text(
+            f"🐞 Debug: LootLabs API success.\n"
+            f"🔗 Final short link: {link}"
+        )
+
+    # 🔗 Send user instruction
     await update.message.reply_text(
         f"🔗 Copy this link and paste it to Chrome. After Completing the step, comeback here and type /token:\n{link}\n\n"
         f"⏳ After completing the steps, I'll auto-confirm your device.\n\n"
         f"🗒️ Copy the link and paste it to Chrome."
     )
 
-    # Send tutorial video
+    # 🎥 Send tutorial video
     video_url = "https://alexafreeinjector.onrender.com/video2025"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
-    # Start polling every 1 second
+    # ⏱️ Start polling every 1 second
     context.job_queue.run_repeating(
         poll_verification,
         interval=1,
@@ -106,7 +124,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# /token command
+# 🧪 /token command
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
     device_id = context.user_data.get('device_id')
     if not device_id:
@@ -135,7 +153,7 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⏳ Not verified yet. Complete the LootLabs link first.")
 
 
-# Main bot launcher
+# 🚀 Main entry point
 def main():
     keep_alive()
     application = ApplicationBuilder().token(BOT_TOKEN).build()
