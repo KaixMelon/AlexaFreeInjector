@@ -3,7 +3,6 @@ import re
 import requests
 import hashlib
 import asyncio
-from urllib.parse import quote_plus
 from telegram.ext import JobQueue
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -13,29 +12,26 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
 
 
-# 🔗 LootLabs link generator with debug + URL encoding
-def get_lootlabs_link(device_id):
+def get_shrinkme_link(device_id):
     api_key = '8c99e33a726aaf40c081e5978ae692cd7ec6ca306b862853e368fbec93d41c4b'
-    secret = 'ALEXA_SECRET2025'
+    secret = 'ALEXA_SECRET2025'  # keep this private and same in PHP
     raw = f"{device_id}{secret}"
     signature = hashlib.sha256(raw.encode()).hexdigest()
 
-    real_url_raw = f"https://kaicodm.store/Free/redirect.php?device_id={device_id}&sig={signature}"
-    encoded_url = quote_plus(real_url_raw)
-    api_url = f"https://lootlabs.io/api?api={api_key}&url={encoded_url}"
+    real_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={signature}"
+    api_url = f"https://lootlabs.io/api?api={api_key}&url={real_url}"
 
     try:
-        print("Requesting:", api_url)
         response = requests.get(api_url)
-        print("LootLabs API response:", response.text)
         data = response.json()
-        return data.get("shortenedUrl") or real_url_raw
+        print("ShrinkMe API response:", data)  # Debug log
+        return data.get("shortenedUrl", real_url)
     except Exception as e:
-        print("LootLabs error:", e)
-        return real_url_raw
+        print("ShrinkMe error:", e)
+        return real_url
 
 
-# 🔁 Poll server to check for verification
+# Background polling to check verification
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
@@ -83,22 +79,24 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     device_id = context.args[0]
 
-    if not re.fullmatch(r'[a-zA-Z0-9]+', device_id) or len(device_id) < 8:
-        await update.message.reply_text("⚠️ Invalid Device ID. Only letters and numbers allowed, min 8 chars.")
+    if not re.fullmatch(r'[a-zA-Z0-9]+', device_id):
+        await update.message.reply_text("⚠️ Invalid Device ID. Only letters and numbers allowed.")
         return
 
     context.user_data['device_id'] = device_id
-    link = get_lootlabs_link(device_id)
+    link = get_shrinkme_link(device_id)
 
     await update.message.reply_text(
-        f"🔗 Copy this link and paste it to Chrome. After completing the step, come back here and type /token:\n{link}\n\n"
+        f"🔗 Copy this link and paste it to Chrome. After Completing the step, comeback here and type /token:\n{link}\n\n"
         f"⏳ After completing the steps, I'll auto-confirm your device.\n\n"
         f"🗒️ Copy the link and paste it to Chrome."
     )
 
+    # Send tutorial video
     video_url = "https://alexafreeinjector.onrender.com/video2025"
     await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
+    # Start polling every 1 second
     context.job_queue.run_repeating(
         poll_verification,
         interval=1,
@@ -130,14 +128,14 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     msg += f"\n🗓️ Expiry: {expiry}"
                 await update.message.reply_text(f"✅ {msg}")
             else:
-                await update.message.reply_text("✅ Verified. Your Device ID is successfully registered.")
+                await update.message.reply_text("✅ Verified, Your Device Id Is Successfully Registered.")
         except:
-            await update.message.reply_text("✅ Verified. Your Device ID is successfully registered.")
+            await update.message.reply_text("✅ Verified, Your Device Id Is Successfully Registered.")
     else:
-        await update.message.reply_text("⏳ Not verified yet. Complete the LootLabs link first.")
+        await update.message.reply_text("⏳ Not verified yet. Complete the ShrinkMe link first.")
 
 
-# 🔃 Main launcher
+# Main bot launcher
 def main():
     keep_alive()
     application = ApplicationBuilder().token(BOT_TOKEN).build()
