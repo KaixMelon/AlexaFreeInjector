@@ -2,58 +2,73 @@ import os
 import re
 import requests
 import hashlib
-import random
-from datetime import datetime
-from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update
 from keep_alive import keep_alive  # Optional Flask server
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+API_URL = 'https://kaicodm.store/Free/api_register.php'
 RINKU_API_TOKEN = 'c7f14e078e237af91d8e920159212bba25b0fd7b'
-VERIFY_JSON_URL = "https://kaicodm.store/Free/Device_Registered.json"
-SECRET = 'ALEXA_SECRET2025'
 
 
 def get_rinku_link(device_id):
-    sig = hashlib.sha256(f"{device_id}{SECRET}".encode()).hexdigest()
-    long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}&t=rinku"
+    secret = 'ALEXA_SECRET2025'
+    sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
+    long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}"
+
     params = {
         "api": RINKU_API_TOKEN,
         "url": long_url,
-        "alias": f"alexa{random.randint(1000,9999)}"
+        "alias": f"alexa{device_id[-4:]}"
     }
 
     try:
         response = requests.get("https://rinku.pro/api", params=params)
         data = response.json()
-        if data.get("status") == "success":
-            return data.get("shortenedUrl", long_url)
+        print("Rinku API response:", data)
+        return data.get("shortenedUrl", long_url)
     except Exception as e:
-        print("❌ Rinku API Error:", e)
+        print("Rinku error:", e)
+        return long_url
 
-    return long_url
+
+# Background polling every 1s to check if verified
+async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = context.job.chat_id
+    device_id = context.job.data
+
+    url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            result = requests.post(API_URL, data={'device_id': device_id}).json()
+            msg = result.get("message", "✅ Device verified.")
+            expiry = result.get("expiry_datetime")
+            if expiry:
+                msg += f"\n🗓️ Expiry: {expiry}"
+
+            await context.bot.send_message(chat_id=chat_id, text=msg)
+            context.job.schedule_removal()  # Stop polling
+    except:
+        pass
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "🤖 <b>Welcome to Alexa Injector!</b>\n\n"
-        "Unlock premium features by registering your device with this bot.\n"
-        "It’s fast, simple, and secure.\n\n"
-        "📱 <b>How to Register:</b>\n"
-        "Just send your device ID using the command below:\n"
-        "<code>/register YOUR_DEVICE_ID</code>\n\n"
-        "💡 <b>Example:</b>\n"
+    tutorial_text = (
+        "👋 <b>Welcome to the Device Registration Bot!</b>\n\n"
+        "This bot allows you to register your device ID to access our services.\n\n"
+        "📋 <b>How to Use:</b>\n"
+        "• To register your device, send the command:\n"
+        "  <code>/register &lt;DEVICE_ID&gt;</code>\n"
+        "  <i>Replace &lt;DEVICE_ID&gt; with your actual device identifier.</i>\n\n"
+        "🔔 <b>Example:</b>\n"
         "<code>/register 9774d56d682e549c</code>\n\n"
-        "📢 Need help? Watch the video tutorial sent after this message.\n\n"
-        "👤 Owner: @Alexak_Only"
+        "Owner: @Alexak_Only"
     )
-    await update.message.reply_text(text, parse_mode='HTML')
+    await update.message.reply_text(tutorial_text, parse_mode='HTML')
 
     video_url = "https://alexafreeinjector.onrender.com/videoJuly15"
-    try:
-        await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
-    except:
-        await update.message.reply_text("📽 Tutorial video is currently unavailable. Please check @Alexak_Only.")
+    await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
 
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,22 +78,27 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     device_id = context.args[0]
     if not re.fullmatch(r'[a-zA-Z0-9]+', device_id):
-        await update.message.reply_text("⚠️ Invalid Device ID.")
+        await update.message.reply_text("⚠️ Invalid Device ID. Only letters and numbers allowed.")
         return
 
     context.user_data['device_id'] = device_id
-    short_link = get_rinku_link(device_id)
+    link = get_rinku_link(device_id)
 
     await update.message.reply_text(
-        f"🔗 Click the link below and complete the steps:\n{short_link}\n\n"
-        f"⚠️ If the page is blank or ad-heavy, wait for the countdown then tap 'Continue'.\n"
-        f"⏳ After completing all tasks, type /token"
+        f"🔗 Click this link and complete the steps in Chrome:\n{link}\n\n"
+        f"⏳ I’ll auto-check every second once you click it.\n\n"
+        f"📽 Tutorial video sent below."
     )
 
     video_url = "https://alexafreeinjector.onrender.com/videoJuly15"
-    await update.message.reply_video(
-        video=video_url,
-        caption="📽 Tutorial Video: How to Complete the Steps"
+    await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
+
+    context.job_queue.run_repeating(
+        poll_verification,
+        interval=1,
+        first=1,
+        data=device_id,
+        chat_id=update.effective_chat.id
     )
 
 
@@ -88,38 +108,35 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Please register first using /register")
         return
 
-    try:
-        response = requests.get(VERIFY_JSON_URL)
-        data = response.json()
+    check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    verify = requests.get(check_url)
 
-        record = data.get(device_id)
-        if not record or not record.get('verified'):
-            await update.message.reply_text("❌ Device not verified yet. Complete the shortlink steps first.")
-            return
+    if verify.status_code == 200:
+        try:
+            response = requests.post(API_URL, data={'device_id': device_id})
+            data = response.json()
 
-        expiry_str = record.get('expiry_datetime')
-        expiry_dt = datetime.strptime(expiry_str, '%Y-%m-%dT%H:%M')
-        now = datetime.now()
-
-        if expiry_dt < now:
-            await update.message.reply_text("❌ Your registration has expired. Please register again.")
-        else:
-            await update.message.reply_text(
-                f"✅ Your device is verified!\n🗓️ Expiry: {expiry_str}"
-            )
-
-    except Exception as e:
-        print("❌ Error checking verification:", e)
-        await update.message.reply_text("❌ Failed to check verification. Try again later.")
+            if data.get('status') == 'success':
+                msg = data['message']
+                expiry = data.get('expiry_datetime')
+                if expiry:
+                    msg += f"\n🗓️ Expiry: {expiry}"
+                await update.message.reply_text(f"✅ {msg}")
+            else:
+                await update.message.reply_text("⚠️ Already verified or invalid request.")
+        except:
+            await update.message.reply_text("✅ Verified, but error on confirmation.")
+    else:
+        await update.message.reply_text("⏳ Not verified yet. Complete the Rinku.pro link first.")
 
 
 def main():
     keep_alive()
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("register", register))
-    app.add_handler(CommandHandler("token", token))
-    app.run_polling()
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("register", register))
+    application.add_handler(CommandHandler("token", token))
+    application.run_polling()
 
 
 if __name__ == '__main__':
