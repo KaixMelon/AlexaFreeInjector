@@ -30,6 +30,7 @@ def get_rinku_link(device_id):
         if data.get("status") == "success":
             return data.get("shortenedUrl", long_url)
         else:
+            print("❌ Rinku API error:", data)
             return long_url
     except Exception as e:
         print("❌ Rinku Exception:", e)
@@ -37,16 +38,28 @@ def get_rinku_link(device_id):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "👋 <b>Welcome to the Alexa Injector Bot!</b>\n\n"
-        "This bot registers your device ID to unlock premium features.\n\n"
-        "📋 <b>To register:</b>\n"
-        "<code>/register YOUR_DEVICE_ID</code>\n\n"
-        "🔔 <b>Example:</b>\n"
-        "<code>/register 9774d56d682e549c</code>\n"
-        "Owner: @Alexak_Only"
-    )
+  text = (
+    "🤖 <b>Welcome to Alexa Injector!</b>\n\n"
+    "Unlock premium features by registering your device with this bot.\n"
+    "It’s fast, simple, and secure.\n\n"
+    "📱 <b>How to Register:</b>\n"
+    "Just send your device ID using the command below:\n"
+    "<code>/register YOUR_DEVICE_ID</code>\n\n"
+    "💡 <b>Example:</b>\n"
+    "<code>/register 9774d56d682e549c</code>\n\n"
+    "📢 Need help? Watch the video tutorial sent after this message.\n\n"
+    "👤 Owner: @Alexak_Only"
+)
+
     await update.message.reply_text(text, parse_mode='HTML')
+
+    # Send original Render-hosted video tutorial
+    video_url = "https://alexafreeinjector.onrender.com/video2025"
+    try:
+        await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
+    except Exception as e:
+        print("⚠️ Video error:", e)
+        await update.message.reply_text("📽 Tutorial video is currently unavailable. Please check @Alexak_Only.")
 
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -80,6 +93,10 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = response.json()
         msg = data.get('message', "✅ Device registered.")
         expiry = data.get("expiry_datetime")
+
+        if "already" in msg.lower():
+            msg = "✅ Your device is already registered. You're good to go!"
+
         if expiry:
             msg += f"\n🗓️ Expiry: {expiry}"
         await update.message.reply_text(msg)
