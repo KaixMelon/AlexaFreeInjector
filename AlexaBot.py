@@ -54,7 +54,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode='HTML')
 
     # Send original Render-hosted video tutorial
-    video_url = "https://alexafreeinjector.onrender.com/video2025"
+    video_url = "https://alexafreeinjector.onrender.com/videoJuly15"
     try:
         await update.message.reply_video(video=video_url, caption="📽 Tutorial Video")
     except Exception as e:
@@ -80,6 +80,13 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⚠️ If the page is blank or ad-heavy, wait for the countdown then tap 'Continue'.\n"
         f"⏳ After completing all tasks, type /token"
     )
+
+    video_url = "https://alexafreeinjector.onrender.com/videoJuly15"
+    await update.message.reply_video(
+        video=video_url,
+        caption="📽 Tutorial Video: How to Complete the Steps"
+    )
+
 
 
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
