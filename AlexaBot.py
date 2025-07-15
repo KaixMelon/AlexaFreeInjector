@@ -2,6 +2,7 @@ import os
 import re
 import requests
 import hashlib
+import json
 import random
 from datetime import datetime
 import pytz
@@ -103,6 +104,23 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Please register first using /register")
         return
 
+    # Check verification JSON file first
+    verify_check_url = f"https://kaicodm.store/Free/verified/Device_Registered.json"
+
+    try:
+        verify_response = requests.get(verify_check_url)
+        verify_data = verify_response.json()
+
+        if not verify_data.get(device_id):
+            await update.message.reply_text("⏳ You haven’t completed the verification steps yet.\n"
+                                            "Please finish the short link and tap 'Continue', then try /token again.")
+            return
+    except Exception as e:
+        print("❌ Error checking verification status:", e)
+        await update.message.reply_text("⚠️ Could not verify your status. Try again shortly.")
+        return
+
+    # If verified, proceed to register/renew
     try:
         response = requests.post(API_URL, data={'device_id': device_id})
         data = response.json()
@@ -113,22 +131,10 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg = "✅ Your device is already registered. You're good to go!"
 
         if expiry:
-            try:
-                manila = pytz.timezone("Asia/Manila")
-                expiry_dt = datetime.strptime(expiry, "%Y-%m-%dT%H:%M")
-                expiry_dt = manila.localize(expiry_dt)
-                now_dt = datetime.now(manila)
-                if now_dt > expiry_dt:
-                    msg = "🔁 Your key has expired. Please register again."
-            except Exception as e:
-                print("⚠️ Date comparison error:", e)
-
             msg += f"\n🗓️ Expiry: {expiry}"
-
         await update.message.reply_text(msg)
-    except Exception as e:
-        print("❌ Verification error:", e)
-        await update.message.reply_text("❌ Verification failed. Please try again later.")
+    except:
+        await update.message.reply_text("❌ Registration failed. Try again later.")
 
 
 def main():
