@@ -1,23 +1,21 @@
 import os
 import re
-import requests
-import hashlib
 import json
+import hashlib
 import random
-from datetime import datetime
-import pytz
+import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive  # Optional Flask server
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_URL = 'https://kaicodm.store/Free/api_register.php'
+VERIFY_JSON_URL = 'https://kaicodm.store/Free/verified/Device_Registered.json'
 RINKU_API_TOKEN = 'c7f14e078e237af91d8e920159212bba25b0fd7b'
-
-# Replace this with your actual Telegram video file_id
-VIDEO_FILE_ID = "AAMCBQADGQECG5MHaHW9jNRlbkbNXlcSQoZ5SM_LD4cAAo8YAAIqd7FXXO-tUn_ol7IBAAdtAAM2BA"
+VIDEO_FILE_ID = 'AAMCBQADGQECG5MHaHW9jNRlbkbNXlcSQoZ5SM_LD4cAAo8YAAIqd7FXXO-tUn_ol7IBAAdtAAM2BA'
 
 
+# Generate short link via Rinku.pro
 def get_rinku_link(device_id):
     secret = 'ALEXA_SECRET2025'
     sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
@@ -53,20 +51,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<code>/register YOUR_DEVICE_ID</code>\n\n"
         "💡 <b>Example:</b>\n"
         "<code>/register 9774d56d682e549c</code>\n\n"
-        "📢 Need help? Watch the tutorial below.\n\n"
+        "📽 Tutorial video is included to guide you.\n"
         "👤 Owner: @Alexak_Only"
     )
-
     await update.message.reply_text(text, parse_mode='HTML')
-
-    try:
-        await update.message.reply_video(
-            video=VIDEO_FILE_ID,
-            caption="📽 Tutorial Video: How to complete the registration steps."
-        )
-    except Exception as e:
-        print("⚠️ Video error:", e)
-        await update.message.reply_text("📽 Tutorial video is currently unavailable. Message @Alexak_Only for help.")
+    await update.message.reply_video(video=VIDEO_FILE_ID, caption="📽 Tutorial: How to complete the steps")
 
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -87,15 +76,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⚠️ If the page is blank or ad-heavy, wait for the countdown then tap 'Continue'.\n"
         f"⏳ After completing all tasks, type /token"
     )
-
-    try:
-        await update.message.reply_video(
-            video=VIDEO_FILE_ID,
-            caption="📽 Tutorial Video: How to complete the steps"
-        )
-    except Exception as e:
-        print("⚠️ Video error:", e)
-        await update.message.reply_text("📽 Tutorial video is currently unavailable. Message @Alexak_Only for help.")
+    await update.message.reply_video(video=VIDEO_FILE_ID, caption="📽 Tutorial: How to complete the steps")
 
 
 async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -104,23 +85,23 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Please register first using /register")
         return
 
-    # Check verification JSON file first
-    verify_check_url = f"https://kaicodm.store/Free/verified/Device_Registered.json"
-
+    # Check if device is in Device_Registered.json
     try:
-        verify_response = requests.get(verify_check_url)
+        verify_response = requests.get(VERIFY_JSON_URL)
         verify_data = verify_response.json()
 
         if not verify_data.get(device_id):
-            await update.message.reply_text("⏳ You haven’t completed the verification steps yet.\n"
-                                            "Please finish the short link and tap 'Continue', then try /token again.")
+            await update.message.reply_text(
+                "⏳ You haven’t completed the verification steps yet.\n"
+                "Please finish the short link and tap 'Continue', then try /token again."
+            )
             return
     except Exception as e:
         print("❌ Error checking verification status:", e)
         await update.message.reply_text("⚠️ Could not verify your status. Try again shortly.")
         return
 
-    # If verified, proceed to register/renew
+    # Proceed with final API registration
     try:
         response = requests.post(API_URL, data={'device_id': device_id})
         data = response.json()
