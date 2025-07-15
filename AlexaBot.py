@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(tutorial_text, parse_mode='HTML')
 
-    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://alexafreeinjector.onrender.com/videoJuly15")
+    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://youtube.com/shorts/BER8HSbJ09c?si=c_w8c0MUA2I3hYlc")
 
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -89,7 +89,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📽 Tutorial video sent below."
     )
 
-    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://alexafreeinjector.onrender.com/videoJuly15")
+    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://youtube.com/shorts/BER8HSbJ09c?si=c_w8c0MUA2I3hYlc")
 
     context.job_queue.run_repeating(
         poll_verification,
