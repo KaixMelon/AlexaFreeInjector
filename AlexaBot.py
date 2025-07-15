@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(tutorial_text, parse_mode='HTML')
 
-    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://youtube.com/shorts/BER8HSbJ09c?si=c_w8c0MUA2I3hYlc")
+    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://www.youtube.com/watch?v=fSN0X-RElwY&t=3s")
 
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -85,11 +85,14 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         f"🔗 Click this link and complete the steps in Chrome:\n{link}\n\n"
+        f"<b>⚠️ If there is no link appeared just register again.</b>\n\n"
         f"⏳ I’ll auto-check every second once you click it.\n\n"
-        f"📽 Tutorial video sent below."
+        f"📽 Tutorial video sent below.",
+        parse_mode="HTML"
     )
 
-    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://youtube.com/shorts/BER8HSbJ09c?si=c_w8c0MUA2I3hYlc")
+
+    await update.message.reply_text("📽 Watch the tutorial here:\nhttps://www.youtube.com/watch?v=fSN0X-RElwY&t=3s")
 
     context.job_queue.run_repeating(
         poll_verification,
