@@ -7,7 +7,6 @@ from telegram import Update
 from keep_alive import keep_alive  # Optional Flask server
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-API_URL = 'https://kaicodm.store/Free/api_register.php'
 RINKU_API_TOKEN = 'c7f14e078e237af91d8e920159212bba25b0fd7b'
 
 
@@ -32,25 +31,27 @@ def get_rinku_link(device_id):
         return long_url
 
 
-# Background polling every 1s to check if verified
+# Poll every second to check if verified
 async def poll_verification(context: ContextTypes.DEFAULT_TYPE):
     chat_id = context.job.chat_id
     device_id = context.job.data
 
-    url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
+    check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
     try:
-        response = requests.get(url)
+        response = requests.get(check_url)
         if response.status_code == 200:
-            result = requests.post(API_URL, data={'device_id': device_id}).json()
+            # Only show confirmation (do NOT register here)
+            expiry_url = f"https://kaicodm.store/Free/api_register.php"
+            result = requests.post(expiry_url, data={'device_id': device_id}).json()
             msg = result.get("message", "✅ Device verified.")
             expiry = result.get("expiry_datetime")
             if expiry:
                 msg += f"\n🗓️ Expiry: {expiry}"
 
             await context.bot.send_message(chat_id=chat_id, text=msg)
-            context.job.schedule_removal()  # Stop polling
-    except:
-        pass
+            context.job.schedule_removal()
+    except Exception as e:
+        print("Polling error:", e)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -66,7 +67,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Owner: @Alexak_Only"
     )
     await update.message.reply_text(tutorial_text, parse_mode='HTML')
-
     await update.message.reply_text("📽 Watch the tutorial here:\nhttps://www.youtube.com/watch?v=fSN0X-RElwY&t=3s")
 
 
@@ -91,7 +91,6 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML"
     )
 
-
     await update.message.reply_text("📽 Watch the tutorial here:\nhttps://www.youtube.com/watch?v=fSN0X-RElwY&t=3s")
 
     context.job_queue.run_repeating(
@@ -110,21 +109,16 @@ async def token(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     check_url = f"https://kaicodm.store/Free/verified/{device_id}.txt"
-    verify = requests.get(check_url)
+    response = requests.get(check_url)
 
-    if verify.status_code == 200:
+    if response.status_code == 200:
         try:
-            response = requests.post(API_URL, data={'device_id': device_id})
-            data = response.json()
-
-            if data.get('status') == 'success':
-                msg = data['message']
-                expiry = data.get('expiry_datetime')
-                if expiry:
-                    msg += f"\n🗓️ Expiry: {expiry}"
-                await update.message.reply_text(f"✅ {msg}")
-            else:
-                await update.message.reply_text("⚠️ Already verified or invalid request.")
+            result = requests.post("https://kaicodm.store/Free/api_register.php", data={'device_id': device_id}).json()
+            msg = result.get("message", "✅ Verified.")
+            expiry = result.get("expiry_datetime")
+            if expiry:
+                msg += f"\n🗓️ Expiry: {expiry}"
+            await update.message.reply_text(msg)
         except:
             await update.message.reply_text("✅ Verified, but error on confirmation.")
     else:
