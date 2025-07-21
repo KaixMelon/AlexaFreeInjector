@@ -2,6 +2,8 @@ import os
 import re
 import requests
 import hashlib
+import random
+import string
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram import Update
 from keep_alive import keep_alive  # Optional Flask server
@@ -15,10 +17,14 @@ def get_rinku_link(device_id):
     sig = hashlib.sha256(f"{device_id}{secret}".encode()).hexdigest()
     long_url = f"https://kaicodm.store/Free/verify.php?device_id={device_id}&sig={sig}"
 
+    # Generate random alias (8 to 12 characters)
+    alias_length = random.randint(10, 30)
+    random_alias = ''.join(random.choices(string.ascii_letters + string.digits, k=alias_length))
+
     params = {
         "api": RINKU_API_TOKEN,
         "url": long_url,
-        "alias": f"alexa{device_id[-4:]}"
+        "alias": random_alias
     }
 
     try:
