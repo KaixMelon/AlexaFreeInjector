@@ -9,7 +9,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")  # Set this in your Render environment
 # Inline buttons
 BUTTONS = InlineKeyboardMarkup([
     [InlineKeyboardButton("📝 Register", url="https://kaicodm.store/Free/register.php")],
-    [InlineKeyboardButton("📽 Tutorial", url="https://t.me/AlexaMainChannel2/693")]
+    [InlineKeyboardButton("📽 Tutorial", url="https://youtu.be/GpgeRR6mM2A?si=Jppg066xKqcZ7oBV")]
 ])
 
 # Welcome message for /start
